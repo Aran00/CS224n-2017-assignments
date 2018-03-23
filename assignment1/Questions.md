@@ -99,8 +99,8 @@ $$
 $$
 \frac{\partial{J_{neg-sample}}}{\partial{\boldsymbol{u_w}}} = 
 \begin{cases} 
-	- \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{v_c} & w = o \\
-	\frac{1}{\sigma(\boldsymbol{- u_w^T v_c})} \sigma^{\prime}(\boldsymbol{- u_w^T v_c}) \boldsymbol{v_c} & w \in [1, K]
+	- \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{v_c} =   (\sigma(\boldsymbol{u_o^T v_c}) - 1) \boldsymbol{v_c} & w = o \\
+	\frac{1}{\sigma(\boldsymbol{- u_w^T v_c})} \sigma^{\prime}(\boldsymbol{- u_w^T v_c}) \boldsymbol{v_c} = (1-\sigma(\boldsymbol{- u_w^T v_c})) \boldsymbol{v_c} & w \in [1, K]
 \end{cases}
 $$
 Computing the cost and derivation in (a)(b) needs $O(WD)$ time complexity and in (c) needs $O(KD)$, so speed-up ratio is $W/K$
