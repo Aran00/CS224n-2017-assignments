@@ -1,3 +1,4 @@
+<!--
 1. Softmax: Omitted
 2. Neural Network Basics
  a. $\frac{\partial \sigma(x)}{\partial x} = -\frac{-e^{-x}}{(1+e^{-x})^2} = \sigma(x)(1-\sigma(x))$
@@ -51,8 +52,59 @@ Surprisingly simple...
  parameters in this NN.
  
  e-g: See in code.
- 
-3.  
+
+3. Word2Vec
+
+a. As the loss function is 
+$$
+J_{softmax-CE}(\boldsymbol{o, v_c, U}) = CE(\boldsymbol{y, \hat{y}})
+$$
+and let 
+$$
+\boldsymbol{\theta} = 
+\begin{bmatrix} u_1^T v_c \\ ... \\ u_W^T v_c \end{bmatrix}
+=\begin{bmatrix} u_1^T \\ ... \\ u_W^T \end{bmatrix} v_c
+= U^T v_c$$
+where $U = \begin{bmatrix} u_1 & u_2 & ... & u_W \end{bmatrix}$
+
+We have $\frac{\partial{J}}{\partial{\boldsymbol{\theta}}} = \boldsymbol{\hat{y}} - \boldsymbol{y}$. And the dimensions are:
+$$
+\boldsymbol{u, v}: [D, 1] \\
+\boldsymbol{y, \hat{y}, \theta}: [W, 1] \\
+U: [D, W]
+$$
+So 
+$$
+\frac{\partial{J}}{\partial{\boldsymbol{v_c}}} = U \frac{\partial{J}}{\partial{\boldsymbol{\theta}}}=U \boldsymbol{(\hat{y}-y)}
+$$
+
+b. To $\boldsymbol{u_w}$, we have
+$$
+\frac{\partial{J}}{\partial{U}} = \boldsymbol{v_c} (\frac{\partial{J}}{\partial{\boldsymbol{\theta}}})^T = \boldsymbol{v_c(\hat{y}-y)^T}
+$$
+so 
+$$
+\frac{\partial{J}}{\partial{\boldsymbol{u_w}}}=(\hat{y_w} - y_w)\boldsymbol{v_c}=
+\begin{cases} 
+	(\hat{y_w} - 1)\boldsymbol{v_c} & w = o \\
+	\hat{y_w} \boldsymbol{v_c} & w \neq o
+\end{cases}
+$$
+
+c. We have
+$$
+\frac{\partial{J_{neg-sample}}}{\partial{\boldsymbol{v_c}}} = - \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{u_o} + \sum_{k=1}^{K}\frac{1}{\sigma(\boldsymbol{- u_k^T v_c})} \sigma^{\prime}(\boldsymbol{-u_k^T v_c}) \boldsymbol{u_k}
+$$
+
+$$
+\frac{\partial{J_{neg-sample}}}{\partial{\boldsymbol{u_w}}} = 
+\begin{cases} 
+	- \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{v_c} & w = o \\
+	\frac{1}{\sigma(\boldsymbol{- u_w^T v_c})} \sigma^{\prime}(\boldsymbol{- u_w^T v_c}) \boldsymbol{v_c} & w \in [1, K]
+\end{cases}
+$$
+Computing the cost and derivation in (a)(b) needs $O(WD)$ time complexity and in (c) needs $O(KD)$, so speed-up ratio is $W/K$
+4.  
 
  
 

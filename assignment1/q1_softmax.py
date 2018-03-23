@@ -33,7 +33,7 @@ def softmax(x):
         ### YOUR CODE HERE
         x = x - np.vstack(np.max(x, axis=1))
         x = np.exp(x)
-        sum = np.sum(x, axis=1)
+        sum = np.vstack(np.sum(x, axis=1))
         x /= sum
         #raise NotImplementedError
         ### END YOUR CODE

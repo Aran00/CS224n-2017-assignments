@@ -30,7 +30,7 @@ def forward_backward_prop(X, labels, params, dimensions):
     ofs = 0
     Dx, H, Dy = (dimensions[0], dimensions[1], dimensions[2])
 
-    W1 = np.reshape(params[ofs:ofs+ Dx * H], (Dx, H))
+    W1 = np.reshape(params[ofs:ofs + Dx * H], (Dx, H))
     ofs += Dx * H
     b1 = np.reshape(params[ofs:ofs + H], (1, H))
     ofs += H
@@ -40,11 +40,22 @@ def forward_backward_prop(X, labels, params, dimensions):
 
     # Note: compute cost based on `sum` not `mean`.
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    # We need to use uppercase variable to denote matrix, but I can't find a good name... What is the name in CS231n?
+    a = X.dot(W1) + b1              # M * H
+    h = sigmoid(a)                  # M * H
+    theta = h.dot(W2) + b2          # M * Dy
+    y = softmax(theta)              # M * Dy
+    cost = np.sum(- np.log(np.sum(labels * y, axis=1)))
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
-    raise NotImplementedError
+    dcost_dtheta = y - labels       # M * Dy
+    gradW2 = np.dot(h.T, dcost_dtheta)      # H * Dy
+    gradb2 = np.sum(dcost_dtheta, axis=0)   # 1 * Dy
+    dcost_dh = np.dot(dcost_dtheta, W2.T)   # M * H
+    dcost_da = dcost_dh * sigmoid_grad(h)   # M * H
+    gradW1 = np.dot(X.T, dcost_da)          # Dx * H
+    gradb1 = np.sum(dcost_da, axis=0)       # 1 * H
     ### END YOUR CODE
 
     ### Stack gradients (do not modify)
@@ -84,7 +95,7 @@ def your_sanity_checks():
     """
     print "Running your sanity checks..."
     ### YOUR CODE HERE
-    raise NotImplementedError
+    # raise NotImplementedError
     ### END YOUR CODE
 
 
