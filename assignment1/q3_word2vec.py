@@ -13,11 +13,10 @@ def normalizeRows(x):
     Implement a function that normalizes each row of a matrix to have
     unit length.
     """
-
     ### YOUR CODE HERE
-    raise NotImplementedError
+    row_length = (np.vstack(np.sqrt(np.sum(x * x, axis=1))))
+    x /= row_length
     ### END YOUR CODE
-
     return x
 
 
@@ -40,9 +39,9 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
 
     Arguments:
     predicted -- numpy ndarray, predicted word vector (\hat{v} in
-                 the written component)
-    target -- integer, the index of the target word
-    outputVectors -- "output" vectors (as rows) for all tokens
+                 the written component) (v_c) (size?)
+    target -- integer, the index of the target word (o)
+    outputVectors -- "output" vectors (as rows) for all tokens (U^T, contains all u_w) [W, D]
     dataset -- needed for negative sampling, unused here.
 
     Return:
@@ -58,7 +57,18 @@ def softmaxCostAndGradient(predicted, target, outputVectors, dataset):
     """
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    W, D = outputVectors.shape
+    # print "The shape of outputVectors are: ", W, D
+    U = outputVectors.T             # [D, W]
+    theta = np.dot(predicted, U)    # length W vector
+    y_hat = softmax(theta)
+    assert target >= 0 and target < W
+    cost = - np.log(y_hat[target])
+
+    y = np.zeros(W)
+    y[target] = 1.0
+    gradPred = np.dot(U, (y_hat - y))
+    grad = np.dot(np.vstack(y_hat - y), predicted.reshape((1, D)))  # [W, D]
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -96,7 +106,31 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     indices.extend(getNegativeSamples(target, dataset, K))
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    _, D = outputVectors.shape
+    u_o = outputVectors[target]  # (D, )
+    v_c = predicted     # (D, )
+    sample_indices = indices[1:]  # (K, )
+
+    # Maybe we have a nicer method to do it?
+    indices_count_map = {}
+    for i in xrange(len(sample_indices)):
+        sample_index = sample_indices[i]
+        if not indices_count_map.has_key(sample_index):
+            indices_count_map[sample_index] = 1
+        else:
+            indices_count_map[sample_index] += 1
+
+    unique_sample_indices = list(set(sample_indices))
+    U_K = outputVectors[unique_sample_indices, :]   # (K_1, D)
+    u_k_count = np.array([indices_count_map[unique_sample_indices[i]] for i in xrange(len(unique_sample_indices))]) # (K_1, )
+    sigmoid_center_target = sigmoid(np.dot(u_o, v_c))   # scalar
+    sigmoid_center_negative_samples = sigmoid(- np.dot(U_K, np.vstack(v_c)).flatten())  #(K_1, )
+    cost = - np.log(sigmoid_center_target) - np.sum(u_k_count * np.log(sigmoid_center_negative_samples))
+
+    gradPred = (sigmoid_center_target - 1.0) * u_o + np.dot(U_K.T, np.vstack(u_k_count * (1.0 - sigmoid_center_negative_samples))).flatten()
+    grad = np.zeros_like(outputVectors)
+    grad[target, :] = (sigmoid_center_target - 1.0) * v_c
+    grad[unique_sample_indices, :] = np.dot(np.vstack(u_k_count * (1.0 - sigmoid_center_negative_samples)), v_c.reshape((1, D)))  # (K_1, D)
     ### END YOUR CODE
 
     return cost, gradPred, grad
@@ -131,7 +165,14 @@ def skipgram(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradOut = np.zeros(outputVectors.shape)
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    c = tokens[currentWord]
+    contextWords_indices = [tokens[contextWords[i]] for i in xrange(len(contextWords))]
+    predicted = inputVectors[c]
+    for i in xrange(len(contextWords)):
+        cost_i, gradPred_i, grad_i = word2vecCostAndGradient(predicted, contextWords_indices[i], outputVectors, dataset)
+        cost += cost_i
+        gradIn[c, :] += gradPred_i
+        gradOut += grad_i
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
@@ -155,7 +196,7 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradOut = np.zeros(outputVectors.shape)
 
     ### YOUR CODE HERE
-    raise NotImplementedError
+    # raise NotImplementedError
     ### END YOUR CODE
 
     return cost, gradIn, gradOut
@@ -223,7 +264,6 @@ def test_word2vec():
     gradcheck_naive(lambda vec: word2vec_sgd_wrapper(
         cbow, dummy_tokens, vec, dataset, 5, negSamplingCostAndGradient),
         dummy_vectors)
-
     print "\n=== Results ==="
     print skipgram("c", 3, ["a", "b", "e", "d", "b", "c"],
         dummy_tokens, dummy_vectors[:5,:], dummy_vectors[5:,:], dataset)
