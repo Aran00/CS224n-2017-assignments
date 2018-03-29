@@ -6,6 +6,7 @@ import random
 from q1_softmax import softmax
 from q2_gradcheck import gradcheck_naive
 from q2_sigmoid import sigmoid, sigmoid_grad
+from collections import Counter
 
 def normalizeRows(x):
     """ Row normalization function
@@ -112,17 +113,10 @@ def negSamplingCostAndGradient(predicted, target, outputVectors, dataset,
     sample_indices = indices[1:]  # (K, )
 
     # Maybe we have a nicer method to do it?
-    indices_count_map = {}
-    for i in xrange(len(sample_indices)):
-        sample_index = sample_indices[i]
-        if not indices_count_map.has_key(sample_index):
-            indices_count_map[sample_index] = 1
-        else:
-            indices_count_map[sample_index] += 1
-
+    indices_counter = Counter(sample_indices)
     unique_sample_indices = list(set(sample_indices))
     U_K = outputVectors[unique_sample_indices, :]   # (K_1, D)
-    u_k_count = np.array([indices_count_map[unique_sample_indices[i]] for i in xrange(len(unique_sample_indices))]) # (K_1, )
+    u_k_count = np.array([indices_counter[unique_sample_indices[i]] for i in xrange(len(unique_sample_indices))]) # (K_1, )
     sigmoid_center_target = sigmoid(np.dot(u_o, v_c))   # scalar
     sigmoid_center_negative_samples = sigmoid(- np.dot(U_K, np.vstack(v_c)).flatten())  #(K_1, )
     cost = - np.log(sigmoid_center_target) - np.sum(u_k_count * np.log(sigmoid_center_negative_samples))
