@@ -190,9 +190,15 @@ def cbow(currentWord, C, contextWords, tokens, inputVectors, outputVectors,
     gradOut = np.zeros(outputVectors.shape)
 
     ### YOUR CODE HERE
-    # raise NotImplementedError
+    c = tokens[currentWord]
+    contextWords_indices = [tokens[contextWords[i]] for i in xrange(len(contextWords))]
+    contextWords_indices_counter = Counter(contextWords_indices)
+    predicted = np.sum(inputVectors[contextWords_indices, :], axis=0)
+    cost, gradPred_hat, gradOut = word2vecCostAndGradient(predicted, c, outputVectors, dataset)
+    contextWords_indices_unique = list(set(contextWords_indices))
+    contextWords_times = np.array([contextWords_indices_counter[contextWords_indices_unique[i]] for i in xrange(len(contextWords_indices_unique))])
+    gradIn[contextWords_indices_unique, :] = np.dot(contextWords_times.reshape(-1, 1), gradPred_hat.reshape(1, -1))
     ### END YOUR CODE
-
     return cost, gradIn, gradOut
 
 

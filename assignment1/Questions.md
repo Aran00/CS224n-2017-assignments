@@ -1,4 +1,3 @@
-<!--
 1. Softmax: Omitted
 2. Neural Network Basics
  a. $\frac{\partial \sigma(x)}{\partial x} = -\frac{-e^{-x}}{(1+e^{-x})^2} = \sigma(x)(1-\sigma(x))$
@@ -55,7 +54,7 @@ Surprisingly simple...
 
 3. Word2Vec
 
-a. As the loss function is 
+ a. As the loss function is 
 $$
 J_{softmax-CE}(\boldsymbol{o, v_c, U}) = CE(\boldsymbol{y, \hat{y}})
 $$
@@ -77,8 +76,7 @@ So
 $$
 \frac{\partial{J}}{\partial{\boldsymbol{v_c}}} = U \frac{\partial{J}}{\partial{\boldsymbol{\theta}}}=U \boldsymbol{(\hat{y}-y)}
 $$
-
-b. To $\boldsymbol{u_w}$, we have
+ b. To $\boldsymbol{u_w}$, we have
 $$
 \frac{\partial{J}}{\partial{U}} = \boldsymbol{v_c} (\frac{\partial{J}}{\partial{\boldsymbol{\theta}}})^T = \boldsymbol{v_c(\hat{y}-y)^T}
 $$
@@ -91,20 +89,43 @@ $$
 \end{cases}
 $$
 
-c. We have
+ c. We have
 $$
-\frac{\partial{J_{neg-sample}}}{\partial{\boldsymbol{v_c}}} = - \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{u_o} + \sum_{k=1}^{K}\frac{1}{\sigma(\boldsymbol{- u_k^T v_c})} \sigma^{\prime}(\boldsymbol{-u_k^T v_c}) \boldsymbol{u_k}
+\frac{\partial{J_{neg-sample}}}{\partial{\boldsymbol{v_c}}} = - \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{u_o} + \sum_{k=1}^{K}\frac{1}{\sigma(\boldsymbol{- u_k^T v_c})} \sigma^{\prime}(\boldsymbol{-u_k^T v_c}) \boldsymbol{u_k} \\
+= (\sigma(\boldsymbol{u_o^T v_c}) - 1)\boldsymbol{u_o} + \sum_{k=1}^{K}({1 - \sigma(\boldsymbol{- u_k^T v_c})}) \boldsymbol{u_k}
 $$
 
 $$
 \frac{\partial{J_{neg-sample}}}{\partial{\boldsymbol{u_w}}} = 
 \begin{cases} 
 	- \frac{1}{\sigma(\boldsymbol{u_o^T v_c})} \sigma^{\prime}(\boldsymbol{u_o^T v_c}) \boldsymbol{v_c} =   (\sigma(\boldsymbol{u_o^T v_c}) - 1) \boldsymbol{v_c} & w = o \\
-	\frac{1}{\sigma(\boldsymbol{- u_w^T v_c})} \sigma^{\prime}(\boldsymbol{- u_w^T v_c}) \boldsymbol{v_c} = (1-\sigma(\boldsymbol{- u_w^T v_c})) \boldsymbol{v_c} & w \in [1, K]
+	\frac{1}{\sigma(\boldsymbol{- u_w^T v_c})} \sigma^{\prime}(\boldsymbol{- u_w^T v_c}) \boldsymbol{v_c} = (1-\sigma(\boldsymbol{- u_w^T v_c})) \boldsymbol{v_c} & w \in [1, K] \\
+0 & w=others	
 \end{cases}
 $$
 Computing the cost and derivation in (a)(b) needs $O(WD)$ time complexity and in (c) needs $O(KD)$, so speed-up ratio is $W/K$
-4.  
+
+ d. Let $F \boldsymbol{(o, v_c)}$ denote $J_{softmax-CE}\boldsymbol{(o, v_c, ...)}$ or $J_{neg-sample}\boldsymbol{(o, v_c, ...)}$ cost functions in the above questions. 
+For skip-gram, we have
+$$J_{skip-gram}(word_{c-m ... c+m}) = \sum_{-m \leq j \leq m, j \neq 0} F(\boldsymbol{w_{c+j}, v_c})$$ 
+So
+$$\frac{\partial{J_{skip-gram}}}{\partial{\boldsymbol{v_i}}} = 
+\begin{cases}
+\sum_{-m \leq j \leq m, j \neq 0} \frac{\partial{F(\boldsymbol{w_{c+j}, v_c})}}{\partial{\boldsymbol{v_c}}} & i=c\\ 
+0 & i=others
+\end{cases}$$
+For the sake of clarity, we will denote $U$ as the collection of all output vectors for all words
+in the vocabulary. We have 
+$$\frac{\partial{J_{skip-gram}}}{\partial{U}} = \sum_{-m \leq j \leq m, j \neq 0} \frac{\partial{F(\boldsymbol{w_{c+j}, v_c})}}{\partial{U}}$$
+For CBOW, the cost is $J_{CBOW}(word_{c-m ... c+m}) = F(\boldsymbol{w_{c}, \hat{v}})$, so
+$$\frac{\partial{J_{CBOW}}}{\partial{\boldsymbol{v_j}}} = 
+\begin{cases}
+\frac{\partial{F(\boldsymbol{w_{c}, \hat{v}})}}{\partial{\boldsymbol{\hat{v}}}} & c-m \leq j \leq c+m, j \neq c \\
+0 & j=others
+\end{cases}
+$$
+where $-m \leq j \leq m, j \neq 0$.
+And $$\frac{\partial{J_{CBOW}}}{\partial{U}} = \frac{\partial{F(\boldsymbol{w_c, \hat{v}})}}{\partial{U}} $$
 
  
 
