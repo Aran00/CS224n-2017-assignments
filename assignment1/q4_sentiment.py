@@ -65,7 +65,7 @@ def getRegularizationValues():
     """
     values = None   # Assign a list of floats in the block below
     ### YOUR CODE HERE
-    values = [5e-4, 6e-4, 7e-4, 8e-4, 8.5e-4, 9e-4, 9.5e-4, 1e-3, 1.1e-3, 1.2e-3, 1.3e-3, 2e-3, 5e-3, 1e-2]
+    values = [1e-4, 1e-3, 1e-2, 1e-1, 1, 1e1, 1e2]
     ### END YOUR CODE
     return sorted(values)
 
