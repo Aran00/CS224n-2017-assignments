@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class PartialParse(object):
     def __init__(self, sentence):
         """Initializes this partial parse.
@@ -21,6 +24,9 @@ class PartialParse(object):
         self.sentence = sentence
 
         ### YOUR CODE HERE
+        self.stack = ["ROOT"]
+        self.buffer = list(self.sentence)
+        self.dependencies = []
         ### END YOUR CODE
 
     def parse_step(self, transition):
@@ -32,6 +38,17 @@ class PartialParse(object):
                         transition.
         """
         ### YOUR CODE HERE
+        if transition == "S":
+            item = self.buffer.pop(0)
+            self.stack.append(item)
+        elif transition == "LA":
+            self.dependencies.append((self.stack[-1], self.stack[-2]))
+            self.stack.pop(-2)
+        elif transition == "RA":
+            self.dependencies.append((self.stack[-2], self.stack[-1]))
+            self.stack.pop(-1)
+        else:
+            pass
         ### END YOUR CODE
 
     def parse(self, transitions):
@@ -66,8 +83,22 @@ def minibatch_parse(sentences, model, batch_size):
     """
 
     ### YOUR CODE HERE
+    partial_parses = [PartialParse(sentence) for sentence in sentences]
+    dependencies = [[] for _ in sentence]
+    unfinished_parses = list(partial_parses)   # Need to test whether it really is shallow copy
+    while len(unfinished_parses) > 0:
+        sample_size = batch_size if batch_size < len(unfinished_parses) else len(unfinished_parses)
+        sample_batch_indices = np.random.choice(len(unfinished_parses), sample_size, False)
+        print sample_batch_indices
+        sample_partial_parses = [unfinished_parses[sample_batch_indice] for sample_batch_indice in sample_batch_indices]
+        next_transitions = model.predict(sample_partial_parses)
+        for partial_parse, transition in zip(sample_partial_parses, next_transitions):
+            partial_parse.parse_step(transition)
+            if len(partial_parse.buffer) == 0 and len(partial_parse.stack) == 1:
+                unfinished_parses.remove(partial_parse)
+                idx = partial_parses.index(partial_parse)
+                dependencies[idx] = partial_parse.dependencies
     ### END YOUR CODE
-
     return dependencies
 
 
