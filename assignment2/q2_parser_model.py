@@ -54,6 +54,9 @@ class ParserModel(Model):
         (Don't change the variable names)
         """
         ### YOUR CODE HERE
+        self.input_placeholder = tf.placeholder(tf.int32, shape=(None, self.config.n_features))
+        self.labels_placeholder = tf.placeholder(tf.float32, shape=(None, self.config.n_classes))
+        self.dropout_placeholder = tf.placeholder(tf.float32)
         ### END YOUR CODE
 
     def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=0):
@@ -79,6 +82,11 @@ class ParserModel(Model):
             feed_dict: The feed dictionary mapping from placeholders to values.
         """
         ### YOUR CODE HERE
+        feed_dict = {
+            self.input_placeholder: inputs_batch,
+            self.labels_placeholder: labels_batch,
+            self.dropout_placeholder: dropout
+        }
         ### END YOUR CODE
         return feed_dict
 
@@ -100,6 +108,9 @@ class ParserModel(Model):
             embeddings: tf.Tensor of shape (None, n_features*embed_size)
         """
         ### YOUR CODE HERE
+        pretrained_embeddings = tf.Variable(self.pretrained_embeddings, trainable=False)   # Set to trainable or not?
+        input_embeddings = tf.nn.embedding_lookup(pretrained_embeddings, self.input_placeholder)
+        embeddings = tf.reshape(input_embeddings, (-1, self.config.n_features * self.config.embed_size))
         ### END YOUR CODE
         return embeddings
 
@@ -126,6 +137,16 @@ class ParserModel(Model):
 
         x = self.add_embedding()
         ### YOUR CODE HERE
+        xavier_initializer = xavier_weight_init()
+        # shape_x = x.get_shape().as_list()   Get X shape
+        W = tf.Variable(xavier_initializer(shape=(self.config.n_features * self.config.embed_size, self.config.hidden_size)))
+        b1 = tf.Variable(tf.zeros([1, self.config.hidden_size]))
+        hidden_layer = tf.nn.relu(tf.matmul(x, W) + b1)
+        hidden_layer_dropped = tf.nn.dropout(hidden_layer, 0.5)
+
+        U = tf.Variable(xavier_initializer(shape=(self.config.hidden_size, self.config.n_classes)))
+        b2 = tf.Variable(tf.zeros([1, self.config.n_classes]))
+        pred = tf.matmul(hidden_layer_dropped, U) + b2
         ### END YOUR CODE
         return pred
 
@@ -143,6 +164,7 @@ class ParserModel(Model):
             loss: A 0-d tensor (scalar)
         """
         ### YOUR CODE HERE
+        loss = tf.nn.softmax_cross_entropy_with_logits(labels=self.labels_placeholder, logits=pred)
         ### END YOUR CODE
         return loss
 
@@ -167,6 +189,8 @@ class ParserModel(Model):
             train_op: The Op for training.
         """
         ### YOUR CODE HERE
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.config.lr)
+        train_op = optimizer.minimize(loss)
         ### END YOUR CODE
         return train_op
 
@@ -181,6 +205,7 @@ class ParserModel(Model):
         prog = tf.keras.utils.Progbar(target=n_minibatches)
         for i, (train_x, train_y) in enumerate(minibatches(train_examples, self.config.batch_size)):
             loss = self.train_on_batch(sess, train_x, train_y)
+            print (i+1)
             prog.update(i + 1, [("train loss", loss)], force=i + 1 == n_minibatches)
 
         print "Evaluating on dev set",
