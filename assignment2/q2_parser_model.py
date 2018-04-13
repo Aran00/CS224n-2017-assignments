@@ -24,6 +24,7 @@ class Config(object):
     batch_size = 1024
     n_epochs = 10
     lr = 0.0005
+    regularaztion_rate = 0.5
 
 
 class ParserModel(Model):
@@ -84,9 +85,11 @@ class ParserModel(Model):
         ### YOUR CODE HERE
         feed_dict = {
             self.input_placeholder: inputs_batch,
-            self.labels_placeholder: labels_batch,
             self.dropout_placeholder: dropout
         }
+        if labels_batch is not None:
+            feed_dict[self.labels_placeholder] = labels_batch
+
         ### END YOUR CODE
         return feed_dict
 
@@ -108,8 +111,9 @@ class ParserModel(Model):
             embeddings: tf.Tensor of shape (None, n_features*embed_size)
         """
         ### YOUR CODE HERE
-        pretrained_embeddings = tf.Variable(self.pretrained_embeddings, trainable=False)   # Set to trainable or not?
-        input_embeddings = tf.nn.embedding_lookup(pretrained_embeddings, self.input_placeholder)
+        # Strange... Why do I need an embedding variable here? And what is the purpose of a variable?
+        # pretrained_embeddings = tf.Variable(self.pretrained_embeddings, trainable=False)   # Set to trainable or not?
+        input_embeddings = tf.nn.embedding_lookup(self.pretrained_embeddings, self.input_placeholder)
         embeddings = tf.reshape(input_embeddings, (-1, self.config.n_features * self.config.embed_size))
         ### END YOUR CODE
         return embeddings
@@ -142,7 +146,7 @@ class ParserModel(Model):
         W = tf.Variable(xavier_initializer(shape=(self.config.n_features * self.config.embed_size, self.config.hidden_size)))
         b1 = tf.Variable(tf.zeros([1, self.config.hidden_size]))
         hidden_layer = tf.nn.relu(tf.matmul(x, W) + b1)
-        hidden_layer_dropped = tf.nn.dropout(hidden_layer, 0.5)
+        hidden_layer_dropped = tf.nn.dropout(hidden_layer, 1 - self.dropout_placeholder)
 
         U = tf.Variable(xavier_initializer(shape=(self.config.hidden_size, self.config.n_classes)))
         b2 = tf.Variable(tf.zeros([1, self.config.n_classes]))
@@ -165,6 +169,11 @@ class ParserModel(Model):
         """
         ### YOUR CODE HERE
         loss = tf.nn.softmax_cross_entropy_with_logits(labels=self.labels_placeholder, logits=pred)
+        '''
+        regularizer = tf.contrib.layers.l2_regularizer(self.config.regularaztion_rate)
+        regularaztion = regularizer(weights1) + regularizer(weights2)
+        loss = cross_entropy_mean + regularaztion
+        '''
         ### END YOUR CODE
         return loss
 
@@ -205,7 +214,6 @@ class ParserModel(Model):
         prog = tf.keras.utils.Progbar(target=n_minibatches)
         for i, (train_x, train_y) in enumerate(minibatches(train_examples, self.config.batch_size)):
             loss = self.train_on_batch(sess, train_x, train_y)
-            print (i+1)
             prog.update(i + 1, [("train loss", loss)], force=i + 1 == n_minibatches)
 
         print "Evaluating on dev set",

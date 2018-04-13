@@ -84,12 +84,12 @@ def minibatch_parse(sentences, model, batch_size):
 
     ### YOUR CODE HERE
     partial_parses = [PartialParse(sentence) for sentence in sentences]
-    dependencies = [[] for _ in sentence]
+    dependencies = [[] for _ in sentences]
     unfinished_parses = list(partial_parses)   # Need to test whether it really is shallow copy
     while len(unfinished_parses) > 0:
         sample_size = batch_size if batch_size < len(unfinished_parses) else len(unfinished_parses)
         sample_batch_indices = np.random.choice(len(unfinished_parses), sample_size, False)
-        print sample_batch_indices
+        # print sample_batch_indices
         sample_partial_parses = [unfinished_parses[sample_batch_indice] for sample_batch_indice in sample_batch_indices]
         next_transitions = model.predict(sample_partial_parses)
         for partial_parse, transition in zip(sample_partial_parses, next_transitions):

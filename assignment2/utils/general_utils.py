@@ -37,6 +37,11 @@ def get_minibatches(data, minibatch_size, shuffle=True):
         np.random.shuffle(indices)
     for minibatch_start in np.arange(0, data_size, minibatch_size):
         minibatch_indices = indices[minibatch_start:minibatch_start + minibatch_size]
+        # Add some alignment here to avoid error(strange...), start
+        if len(minibatch_indices) < minibatch_size:
+            sample_count = minibatch_size - len(minibatch_indices)
+            minibatch_indices = np.concatenate((minibatch_indices, np.random.choice(data_size, sample_count)))
+        # End here
         yield [_minibatch(d, minibatch_indices) for d in data] if list_data \
             else _minibatch(data, minibatch_indices)
 
