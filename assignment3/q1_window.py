@@ -25,6 +25,7 @@ logger = logging.getLogger("hw3.q1")
 logger.setLevel(logging.DEBUG)
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
+
 class Config:
     """Holds model hyperparams and data information.
 
@@ -34,11 +35,11 @@ class Config:
 
     TODO: Fill in what n_window_features should be, using n_word_features and window_size.
     """
-    n_word_features = 2 # Number of features for every word in the input.
-    window_size = 1 # The size of the window to use.
-    ### YOUR CODE HERE
-    n_window_features = 0 # The total number of features used for each window.
-    ### END YOUR CODE
+    n_word_features = 2  # Number of features for every word in the input.
+    window_size = 1  # The size of the window to use.
+    # YOUR CODE HERE
+    n_window_features = n_word_features * (2 * window_size + 1)  # The total number of features used for each window.
+    # END YOUR CODE
     n_classes = 5
     dropout = 0.5
     embed_size = 50
@@ -96,10 +97,22 @@ def make_windowed_data(data, start, end, window_size = 1):
 
     windowed_data = []
     for sentence, labels in data:
-		### YOUR CODE HERE (5-20 lines)
-
-		### END YOUR CODE
+        # YOUR CODE HERE (5-20 lines)
+        assert len(sentence) == len(labels)
+        for i in xrange(len(labels)):
+            windowed_sentence = []
+            for j in xrange(-window_size, window_size + 1):
+                if i + j < 0:
+                    element = start
+                elif i + j >= len(labels):
+                    element = end
+                else:
+                    element = sentence[i+j]
+                windowed_sentence.extend(element)
+            windowed_data.append((windowed_sentence, labels[i]))
+        # END YOUR CODE
     return windowed_data
+
 
 class WindowModel(NERModel):
     """
@@ -129,11 +142,13 @@ class WindowModel(NERModel):
 
         (Don't change the variable names)
         """
-        ### YOUR CODE HERE (~3-5 lines)
+        # YOUR CODE HERE (~3-5 lines)
+        self.input_placeholder = tf.placeholder(tf.int32, shape=(None, self.config.n_window_features))
+        self.labels_placeholder = tf.placeholder(tf.int32, shape=(None, ))
+        self.dropout_placeholder = tf.placeholder(tf.float32)
+        # END YOUR CODE
 
-        ### END YOUR CODE
-
-    def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=1):
+    def create_feed_dict(self, inputs_batch, labels_batch=None, dropout=0):
         """Creates the feed_dict for the model.
         A feed_dict takes the form of:
         feed_dict = {
@@ -152,9 +167,14 @@ class WindowModel(NERModel):
         Returns:
             feed_dict: The feed dictionary mapping from placeholders to values.
         """
-        ### YOUR CODE HERE (~5-10 lines)
-         
-        ### END YOUR CODE
+        # YOUR CODE HERE (~5-10 lines)
+        feed_dict = {
+            self.input_placeholder: inputs_batch,
+            self.dropout_placeholder: dropout
+        }
+        if labels_batch is not None:
+            feed_dict[self.labels_placeholder] = labels_batch
+        # END YOUR CODE
         return feed_dict
 
     def add_embedding(self):
@@ -173,11 +193,13 @@ class WindowModel(NERModel):
         Returns:
             embeddings: tf.Tensor of shape (None, n_window_features*embed_size)
         """
-        ### YOUR CODE HERE (!3-5 lines)
-                                                             
-                                  
-                                                                                                                 
-        ### END YOUR CODE
+        # YOUR CODE HERE (!3-5 lines)
+        # Make embedding trainable here can improve result significantly
+        pretrained_embeddings = tf.Variable(self.pretrained_embeddings)
+        # (None, n_window_features, embedding_size)
+        input_embeddings = tf.nn.embedding_lookup(pretrained_embeddings, self.input_placeholder)
+        embeddings = tf.reshape(input_embeddings, (-1, self.config.n_window_features * self.config.embed_size))
+        # END YOUR CODE
         return embeddings
 
     def add_prediction_op(self):
@@ -206,9 +228,18 @@ class WindowModel(NERModel):
 
         x = self.add_embedding()
         dropout_rate = self.dropout_placeholder
-        ### YOUR CODE HERE (~10-20 lines)
+        # YOUR CODE HERE (~10-20 lines)
+        W = tf.get_variable("hidden_layer_weight", initializer=tf.contrib.layers.xavier_initializer(),
+                            shape=(self.config.n_window_features * self.config.embed_size, self.config.hidden_size))
+        b1 = tf.Variable(tf.zeros([1, self.config.hidden_size]))
+        hidden_layer = tf.nn.relu(tf.matmul(x, W) + b1)
+        hidden_layer_dropped = tf.nn.dropout(hidden_layer, 1 - dropout_rate)
 
-        ### END YOUR CODE
+        U = tf.get_variable("softmax_layer_weight", shape=(self.config.hidden_size, self.config.n_classes),
+                            initializer=tf.contrib.layers.xavier_initializer())
+        b2 = tf.Variable(tf.zeros([1, self.config.n_classes]))
+        pred = tf.matmul(hidden_layer_dropped, U) + b2
+        # END YOUR CODE
         return pred
 
     def add_loss_op(self, pred):
@@ -224,9 +255,10 @@ class WindowModel(NERModel):
         Returns:
             loss: A 0-d tensor (scalar)
         """
-        ### YOUR CODE HERE (~2-5 lines)
-                                   
-        ### END YOUR CODE
+        # YOUR CODE HERE (~2-5 lines)
+        all_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.labels_placeholder, logits=pred)
+        loss = tf.reduce_mean(all_loss)
+        # END YOUR CODE
         return loss
 
     def add_training_op(self, loss):
@@ -248,9 +280,10 @@ class WindowModel(NERModel):
         Returns:
             train_op: The Op for training.
         """
-        ### YOUR CODE HERE (~1-2 lines)
-
-        ### END YOUR CODE
+        # YOUR CODE HERE (~1-2 lines)
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.config.lr)
+        train_op = optimizer.minimize(loss)
+        # END YOUR CODE
         return train_op
 
     def preprocess_sequence_data(self, examples):
@@ -313,10 +346,12 @@ def test_make_windowed_data():
         ([2,0] + [3,3] + [6,0], 3,),
         ]
 
+
 def do_test1(_):
     logger.info("Testing make_windowed_data")
     test_make_windowed_data()
     logger.info("Passed!")
+
 
 def do_test2(args):
     logger.info("Testing implementation of WindowModel")
@@ -341,6 +376,7 @@ def do_test2(args):
     logger.info("Model did not crash!")
     logger.info("Passed!")
 
+
 def do_train(args):
     # Set up some parameters.
     config = Config()
@@ -354,7 +390,7 @@ def do_train(args):
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s: %(message)s'))
     logging.getLogger().addHandler(handler)
 
-    report = None #Report(Config.eval_output)
+    report = None  # Report(Config.eval_output)
 
     with tf.Graph().as_default():
         logger.info("Building model...",)

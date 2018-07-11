@@ -60,8 +60,9 @@ class Config:
         self.conll_output = self.output_path + "{}_predictions.conll".format(self.cell)
         self.log_output = self.output_path + "log"
 
+
 def pad_sequences(data, max_length):
-    """Ensures each input-output seqeunce pair in @data is of length
+    """Ensures each input-output sequence pair in @data is of length
     @max_length by padding it with zeros and truncating the rest of the
     sequence.
 

@@ -31,3 +31,53 @@ Solution:
 The parameters with the smallest gradients (on average) will get the larger updates.
 This means parameters that are at a place where the loss with respect to them is pretty at will get larger updates, helping them move off plateaus.
 
+3.Recurrent Neural Networks: Language Modeling
+a. as $y^{(t)}$ is one-hot, we have $J^{(t)}(\theta) = log PP^{(t)}$
+
+for $|V|=10000$, we have 
+$$
+PP = 10000 \\
+CE = log10000 = 9.21 
+$$
+
+b. For cross entropy loss, according to the solution of assignment 1, we have
+$$\frac{\partial J^{(t)}}{\partial \theta^{(t)}} = {\hat{y}}^{(t)} - y^{(t)}$$ 
+where $\theta^{(t)}=h_{(t)}U+b_2$
+So other derivatives are easy to get as below:
+$$
+\frac{\partial J^{(t)}}{\partial b_2} = {\hat{y}}^{(t)} - y^{(t)}  \\
+\frac{\partial J^{(t)}}{\partial h_{(t)}} = \frac{\partial J^{(t)}}{\partial \theta^{(t)}}U^{T}  
+$$
+as $x^{(t)}$ is one-hot vector,
+$$
+\frac{\partial J^{(t)}}{\partial L_{x^{(t)}}} = (\frac{\partial J^{(t)}}{\partial h_{(t)}} \circ (1 - h_{(t)}) \circ h_{(t)})I^{T}\\
+$$
+We also have
+$$
+\frac{\partial J^{(t)}}{\partial I}\Bigr|
+_{(t)} = {e^{(t)}}^T (\frac{\partial J^{(t)}}{\partial h_{(t)}} \circ (1 - h_{(t)}) \circ h_{(t)}) \\
+\frac{\partial J^{(t)}}{\partial H}\Bigr|
+_{(t)} = {h^{(t-1)}}^T (\frac{\partial J^{(t)}}{\partial h_{(t)}} \circ (1 - h_{(t)}) \circ h_{(t)})\\
+\frac{\partial J^{(t)}}{\partial h^{(t-1)}} =(\frac{\partial J^{(t)}}{\partial h_{(t)}} \circ (1 - h_{(t)}) \circ h_{(t)}) H^T\\
+$$
+
+c. As we already have $\frac{\partial J^{(t)}}{\partial h^{(t-1)}}$, we can write the similar derivatives:
+$$
+\frac{\partial J^{(t)}}{\partial L_{x^{(t-1)}}} = (\frac{\partial J^{(t)}}{\partial h_{(t-1)}} \circ (1 - h_{(t-1)}) \circ h_{(t-1)})I^{T}\\
+\frac{\partial J^{(t)}}{\partial I}\Bigr|
+_{(t-1)} = {e^{(t-1)}}^T (\frac{\partial J^{(t)}}{\partial h_{(t-1)}} \circ (1 - h_{(t-1)}) \circ h_{(t-1)}) \\
+\frac{\partial J^{(t)}}{\partial H}\Bigr|
+_{(t-1)} = {h^{(t-2)}}^T (\frac{\partial J^{(t)}}{\partial h_{(t-1)}} \circ (1 - h_{(t-1)}) \circ h_{(t-1)})
+$$
+
+d.
+Forward propagation:
+$O(D_h*D_h + d*D_h + |V|*D_h + a*D_h + b*|V|) = O((D_h + d + |V|) * D_h) \approx O(|V| * D_h)$ 
+Back propagation:
+For all derivatives in b:
+$(O(|V| + D_h*|V| + 2*D_h + d*D_h + D_h * D_h + D_h * D_h)) \approx O(|V| * D_h)$
+For $\tau$ steps:
+$(O(|V| + D_h*|V| + 2*D_h + \tau * (d*D_h  + D_h * D_h + D_h * D_h)))$
+We can see that the most time-consuming step is decoding and its back propagation. That is, translate the hidden vector into vocabulary dim vector step, as vocabulary size could be very large(assuming $|v| >> Dh$).
+
+

@@ -111,9 +111,9 @@ class ParserModel(Model):
             embeddings: tf.Tensor of shape (None, n_features*embed_size)
         """
         ### YOUR CODE HERE
-        # Strange... Why do I need an embedding variable here? And what is the purpose of a variable?
-        # pretrained_embeddings = tf.Variable(self.pretrained_embeddings, trainable=False)   # Set to trainable or not?
-        input_embeddings = tf.nn.embedding_lookup(self.pretrained_embeddings, self.input_placeholder)
+
+        pretrained_embeddings = tf.Variable(self.pretrained_embeddings)   # Set to trainable or not?
+        input_embeddings = tf.nn.embedding_lookup(pretrained_embeddings, self.input_placeholder)
         embeddings = tf.reshape(input_embeddings, (-1, self.config.n_features * self.config.embed_size))
         ### END YOUR CODE
         return embeddings
@@ -214,7 +214,7 @@ class ParserModel(Model):
         prog = tf.keras.utils.Progbar(target=n_minibatches)
         for i, (train_x, train_y) in enumerate(minibatches(train_examples, self.config.batch_size)):
             loss = self.train_on_batch(sess, train_x, train_y)
-            prog.update(i + 1, [("train loss", loss)], force=i + 1 == n_minibatches)
+            prog.update(i + 1, [("train loss", loss)])
 
         print "Evaluating on dev set",
         dev_UAS, _ = parser.parse(dev_set)
@@ -283,5 +283,5 @@ def main(debug=True):
 
 
 if __name__ == '__main__':
-    main()
+    main(False)
 

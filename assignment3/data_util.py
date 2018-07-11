@@ -130,6 +130,7 @@ def load_and_preprocess_data(args):
 
     return helper, train_data, dev_data, train, dev
 
+
 def load_embeddings(args, helper):
     embeddings = np.array(np.random.randn(len(helper.tok2id) + 1, EMBED_SIZE), dtype=np.float32)
     embeddings[0] = 0.
@@ -140,6 +141,7 @@ def load_embeddings(args, helper):
     logger.info("Initialized embeddings.")
 
     return embeddings
+
 
 def build_dict(words, max_words=None, offset=0):
     cnt = Counter(words)

@@ -102,16 +102,19 @@ class NERModel(Model):
             # You may use the progress bar to monitor the training progress
             # Addition of progress bar will not be graded, but may help when debugging
             prog = Progbar(target=1 + int(len(train_examples) / self.config.batch_size))
-			
-			# The general idea is to loop over minibatches from train_examples, and run train_on_batch inside the loop
-			# Hint: train_examples could be a list containing the feature data and label data
-			# Read the doc for utils.get_minibatches to find out how to use it.
-                        # Note that get_minibatches could either return a list, or a list of list
-                        # [features, labels]. This makes expanding tuples into arguments (* operator) handy
 
-            ### YOUR CODE HERE (2-3 lines)
+            # The general idea is to loop over minibatches from train_examples, and run train_on_batch inside the loop
+            # Hint: train_examples could be a list containing the feature data and label data
+            #  Read the doc for utils.get_minibatches to find out how to use it.
+            #  Note that get_minibatches could either return a list, or a list of list
+            #  [features, labels]. This makes expanding tuples into arguments (* operator) handy
 
-            ### END YOUR CODE
+            # YOUR CODE HERE (2-3 lines)
+            for i, mini_batch in enumerate(minibatches(train_examples, self.config.batch_size)):
+                feed = self.create_feed_dict(inputs_batch=mini_batch[0], labels_batch=mini_batch[1], dropout=self.config.dropout)
+                _, loss = sess.run([self.train_op, self.loss], feed_dict=feed)
+                prog.update(i + 1, [("train loss", loss)])
+            # END YOUR CODE
 
             logger.info("Evaluating on development data")
             token_cm, entity_scores = self.evaluate(sess, dev_set, dev_set_raw)
