@@ -111,7 +111,13 @@ class NERModel(Model):
 
             # YOUR CODE HERE (2-3 lines)
             for i, mini_batch in enumerate(minibatches(train_examples, self.config.batch_size)):
-                feed = self.create_feed_dict(inputs_batch=mini_batch[0], labels_batch=mini_batch[1], dropout=self.config.dropout)
+                params = {
+                    "inputs_batch": mini_batch[0],
+                    "labels_batch": mini_batch[1]
+                }
+                if len(mini_batch) == 3:
+                    params["mask_batch"] = mini_batch[2]
+                feed = self.create_feed_dict(dropout=self.config.dropout, **params)
                 _, loss = sess.run([self.train_op, self.loss], feed_dict=feed)
                 prog.update(i + 1, [("train loss", loss)])
             # END YOUR CODE

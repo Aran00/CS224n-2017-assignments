@@ -62,8 +62,10 @@ class RNNCell(tf.nn.rnn_cell.RNNCell):
         # be defined elsewhere!
         with tf.variable_scope(scope):
             # YOUR CODE HERE (~6-10 lines)
-            W_x = tf.get_variable("W_x", shape=(self.input_size, self.state_size), initializer=tf.contrib.layers.xavier_initializer())
-            W_h = tf.get_variable("W_h", shape=(self.state_size, self.state_size), initializer=tf.contrib.layers.xavier_initializer())
+            W_x = tf.get_variable("W_x", shape=(self.input_size, self.state_size),
+                                  initializer=tf.contrib.layers.xavier_initializer())
+            W_h = tf.get_variable("W_h", shape=(self.state_size, self.state_size),
+                                  initializer=tf.contrib.layers.xavier_initializer())
             b = tf.get_variable("b", shape=(self.state_size, ))
             new_state = tf.sigmoid(tf.matmul(inputs, W_x) + tf.matmul(state, W_h) + b)
             # END YOUR CODE ###
